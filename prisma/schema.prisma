@@ -25,7 +25,7 @@ model Subscriber {
 
 model AppSettings {
   id              String  @id @default("default")
-  pollIntervalSec Int     @default(60)
+  pollIntervalSec Int     @default(300)
   paused          Boolean @default(false)
   includeReplies  Boolean @default(false)
 }

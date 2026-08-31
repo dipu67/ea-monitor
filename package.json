@@ -21,10 +21,13 @@
     "typescript": "^7.0.2"
   },
   "dependencies": {
+    "@prisma/adapter-better-sqlite3": "^7.10.0",
     "@prisma/adapter-libsql": "^7.10.0",
     "@prisma/client": "^7.10.0",
+    "better-sqlite3": "^12.11.1",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
-    "grammy": "^1.46.0"
+    "grammy": "^1.46.0",
+    "tsx": "^4.23.13"
   }
 }

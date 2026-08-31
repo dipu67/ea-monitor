@@ -2,24 +2,36 @@
 
 Personal Telegram bot that watches X/Twitter accounts for new posts and flags crypto alpha signals (contract addresses, mint dates, listings, pump.fun / dexscreener links).
 
-## Setup
+## Install (Linux, macOS, Termux)
 
-1. Copy `.env.example` to `.env` and set `TELEGRAM_BOT_TOKEN` (from [@BotFather](https://t.me/BotFather)) and `ALLOWED_ID` (your numeric Telegram user id, from [@userinfobot](https://t.me/userinfobot)). If either is missing, `npm start` asks for it in the terminal and writes it to `.env`.
-2. Install and create the SQLite database:
+Termux first: `pkg update && pkg install curl`
 
 ```bash
+curl -fsSL https://raw.githubusercontent.com/dipu67/ea-monitor/main/install.sh | bash
+```
+
+Then start:
+
+```bash
+ea-monitor
+# or
+cd ~/ea-monitor && npm start
+```
+
+On first run the terminal asks for `TELEGRAM_BOT_TOKEN` ([@BotFather](https://t.me/BotFather)) and `ALLOWED_ID` ([@userinfobot](https://t.me/userinfobot)), then writes them to `.env`.
+
+Install location is `$HOME/ea-monitor` (override with `EA_MONITOR_HOME`).
+
+## Manual setup
+
+```bash
+git clone https://github.com/dipu67/ea-monitor.git
+cd ea-monitor
 npm install
 npx prisma generate
 npx prisma db push
-```
-
-3. Run:
-
-```bash
 npm start
 ```
-
-4. Open the bot in Telegram, send `/start`, then `/add username`.
 
 ## Commands
 
@@ -32,4 +44,4 @@ npm start
 | `/check` | Poll immediately |
 | `/settings` | Status, pause/resume, interval, replies |
 
-Tweets are polled on a loop (default 60s). Only `ALLOWED_ID` can use the bot; alerts go to those user ids.
+Tweets are polled on a loop (default 5 minutes). Only `ALLOWED_ID` can use the bot; alerts go to those user ids.
