@@ -1,0 +1,31 @@
+datasource db {
+  provider = "sqlite"
+}
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+model Project {
+  id         String    @id
+  username   String    @unique
+  name       String
+  bio        String    @default("")
+  cursor     String?
+  mintDate   DateTime?
+  createdAt  DateTime  @default(now())
+}
+
+model Subscriber {
+  chatId    String   @id
+  username  String?
+  createdAt DateTime @default(now())
+}
+
+model AppSettings {
+  id              String  @id @default("default")
+  pollIntervalSec Int     @default(60)
+  paused          Boolean @default(false)
+  includeReplies  Boolean @default(false)
+}
