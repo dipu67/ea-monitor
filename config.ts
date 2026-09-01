@@ -12,7 +12,7 @@ function env(name: string): string | undefined {
 const pollFromEnv = Number(process.env.POLL_INTERVAL_SEC ?? 300);
 
 export const config = {
-  databaseUrl: env("DATABASE_URL") ?? "file:./dev.db",
+  storePath: env("STORE_PATH") ?? join(process.cwd(), "data", "store.json"),
   fxBaseUrl: env("FXTWITTER_BASE_URL") ?? "https://api.fxtwitter.com",
   defaultPollIntervalSec: Number.isFinite(pollFromEnv) && pollFromEnv >= 15 ? pollFromEnv : 300,
   telegramToken: "",

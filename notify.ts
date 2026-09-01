@@ -1,7 +1,7 @@
 import type { Bot } from "grammy";
 import { config, isAllowedUser } from "./config.js";
-import { prisma } from "./db.js";
 import { hasAlphaSignal, type Signal } from "./signal.js";
+import { listSubscribers } from "./store.js";
 import type { APITwitterStatus } from "./fxTwitter/types.js";
 import { escapeHtml, log } from "./util.js";
 
@@ -30,7 +30,7 @@ export function formatTweetAlert(tweet: APITwitterStatus, signals: Signal[]) {
 }
 
 export async function notifySubscribers(bot: Bot, html: string) {
-  const subscribers = await prisma.subscriber.findMany();
+  const subscribers = await listSubscribers();
   const chatIds = new Set([
     ...config.allowedIds,
     ...subscribers.map((s) => s.chatId).filter((id) => isAllowedUser(id)),

@@ -1,6 +1,6 @@
-import { prisma } from "./db.js";
 import { fx } from "./fxClient.js";
 import type { APITwitterStatus, ProfileStatusesOptions } from "./fxTwitter/types.js";
+import { listProjects, updateProject } from "./store.js";
 import { log, sleep } from "./util.js";
 
 export interface NewTweet {
@@ -10,7 +10,7 @@ export interface NewTweet {
 }
 
 export async function monitor(includeReplies = false): Promise<NewTweet[]> {
-  const projects = await prisma.project.findMany();
+  const projects = await listProjects();
   const found: NewTweet[] = [];
 
   for (const [index, project] of projects.entries()) {
@@ -29,10 +29,7 @@ export async function monitor(includeReplies = false): Promise<NewTweet[]> {
       }
 
       if (res.cursor.top && res.cursor.top !== project.cursor) {
-        await prisma.project.update({
-          where: { username: project.username },
-          data: { cursor: res.cursor.top },
-        });
+        await updateProject({ username: project.username }, { cursor: res.cursor.top });
       }
 
       const fresh = res.results.filter((tweet) => {

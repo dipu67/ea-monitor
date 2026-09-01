@@ -1,8 +1,8 @@
 import type { Bot } from "grammy";
-import { getSettings, prisma } from "./db.js";
 import { monitor } from "./monitor.js";
 import { notifySubscribers, formatTweetAlert } from "./notify.js";
 import { detectSignals, mintDateFromSignals } from "./signal.js";
+import { getSettings, updateProject } from "./store.js";
 import { log } from "./util.js";
 
 let timer: ReturnType<typeof setTimeout> | undefined;
@@ -28,10 +28,7 @@ async function tick(bot: Bot) {
       const signals = detectSignals(item.tweet);
       const mintDate = mintDateFromSignals(signals);
       if (mintDate) {
-        await prisma.project.update({
-          where: { id: item.projectId },
-          data: { mintDate },
-        });
+        await updateProject({ id: item.projectId }, { mintDate: mintDate.toISOString() });
       }
       await notifySubscribers(bot, formatTweetAlert(item.tweet, signals));
     }

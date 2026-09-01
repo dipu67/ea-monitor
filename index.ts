@@ -1,6 +1,5 @@
 import { loadConfig } from "./config.js";
 import { startMonitorLoop, stopMonitorLoop } from "./cron.js";
-import { prisma } from "./db.js";
 import { log } from "./util.js";
 
 async function main() {
@@ -11,7 +10,6 @@ async function main() {
     log("Shutting down");
     stopMonitorLoop();
     await bot.stop();
-    await prisma.$disconnect();
     process.exit(0);
   };
 
@@ -26,8 +24,7 @@ async function main() {
   await startBot();
 }
 
-main().catch(async (err) => {
+main().catch((err) => {
   console.error(err);
-  await prisma.$disconnect();
   process.exit(1);
 });

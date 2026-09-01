@@ -1,8 +1,17 @@
 import { Bot, type Context } from "grammy";
 import { config, isAllowedUser } from "./config.js";
 import { runMonitorOnce } from "./cron.js";
-import { getSettings, prisma } from "./db.js";
 import { fx } from "./fxClient.js";
+import {
+  countProjects,
+  createProject,
+  deleteProject,
+  findProjectByUsername,
+  getSettings,
+  listProjects,
+  updateSettings,
+  upsertSubscriber,
+} from "./store.js";
 import { escapeHtml, isValidUsername, normalizeUsername } from "./util.js";
 
 export const bot = new Bot(config.telegramToken);
@@ -12,19 +21,13 @@ bot.use(async (ctx, next) => {
   await next();
 });
 
-async function upsertSubscriber(ctx: Context) {
+async function registerChat(ctx: Context) {
   if (!ctx.chat) return;
-  const chatId = String(ctx.chat.id);
-  const username = ctx.from?.username ?? null;
-  await prisma.subscriber.upsert({
-    where: { chatId },
-    create: { chatId, username },
-    update: { username },
-  });
+  await upsertSubscriber(String(ctx.chat.id), ctx.from?.username ?? null);
 }
 
 bot.command("start", async (ctx) => {
-  await upsertSubscriber(ctx);
+  await registerChat(ctx);
   await ctx.reply(
     [
       "<b>EA Monitor</b>",
@@ -56,14 +59,14 @@ bot.command("help", async (ctx) => {
 });
 
 bot.command("add", async (ctx) => {
-  await upsertSubscriber(ctx);
+  await registerChat(ctx);
   const username = normalizeUsername(ctx.match ?? "");
   if (!username || !isValidUsername(username)) {
     await ctx.reply("Usage: /add username");
     return;
   }
 
-  const exist = await prisma.project.findUnique({ where: { username } });
+  const exist = await findProjectByUsername(username);
   if (exist) {
     await ctx.reply(`Already watching @${username}`);
     return;
@@ -91,7 +94,7 @@ bot.command("add", async (ctx) => {
     };
     if (statuses?.cursor.top) data.cursor = statuses.cursor.top;
 
-    await prisma.project.create({ data });
+    await createProject(data);
 
     const user = res.user;
     await ctx.reply(
@@ -119,27 +122,25 @@ bot.command("remove", async (ctx) => {
     return;
   }
 
-  const exist = await prisma.project.findUnique({
-    where: { username },
-  });
+  const exist = await findProjectByUsername(username);
   if (!exist) {
     await ctx.reply(`@${username} is not being watched`);
     return;
   }
 
-  await prisma.project.delete({ where: { username: exist.username } });
+  await deleteProject(exist.username);
   await ctx.reply(`Removed @${exist.username}`);
 });
 
 bot.command("list", async (ctx) => {
-  const projects = await prisma.project.findMany({ orderBy: { username: "asc" } });
+  const projects = await listProjects();
   if (projects.length === 0) {
     await ctx.reply("Nothing is being watched yet. Use /add username");
     return;
   }
 
   const lines = projects.map((p, i) => {
-    const mint = p.mintDate ? ` · mint ${p.mintDate.toISOString().slice(0, 10)}` : "";
+    const mint = p.mintDate ? ` · mint ${p.mintDate.slice(0, 10)}` : "";
     return `${i + 1}. <b>${escapeHtml(p.name)}</b> · @${escapeHtml(p.username)}${mint}`;
   });
   await ctx.reply(`<b>Watching ${projects.length}</b>\n\n${lines.join("\n")}`, {
@@ -148,7 +149,7 @@ bot.command("list", async (ctx) => {
 });
 
 bot.command("check", async (ctx) => {
-  await upsertSubscriber(ctx);
+  await registerChat(ctx);
   await ctx.reply("Polling now…");
   await runMonitorOnce(bot);
   await ctx.reply("Poll finished.");
@@ -159,21 +160,13 @@ bot.command("settings", async (ctx) => {
   const [action, value] = arg.split(/\s+/);
 
   if (action === "pause") {
-    await prisma.appSettings.upsert({
-      where: { id: "default" },
-      create: { id: "default", paused: true },
-      update: { paused: true },
-    });
+    await updateSettings({ paused: true });
     await ctx.reply("Monitor paused.");
     return;
   }
 
   if (action === "resume") {
-    await prisma.appSettings.upsert({
-      where: { id: "default" },
-      create: { id: "default", paused: false },
-      update: { paused: false },
-    });
+    await updateSettings({ paused: false });
     await ctx.reply("Monitor resumed.");
     return;
   }
@@ -184,11 +177,7 @@ bot.command("settings", async (ctx) => {
       await ctx.reply("Interval must be between 15 and 3600 seconds.");
       return;
     }
-    await prisma.appSettings.upsert({
-      where: { id: "default" },
-      create: { id: "default", pollIntervalSec: sec },
-      update: { pollIntervalSec: sec },
-    });
+    await updateSettings({ pollIntervalSec: sec });
     await ctx.reply(`Poll interval set to ${sec}s. Takes effect on the next cycle.`);
     return;
   }
@@ -199,17 +188,13 @@ bot.command("settings", async (ctx) => {
       return;
     }
     const includeReplies = value === "on";
-    await prisma.appSettings.upsert({
-      where: { id: "default" },
-      create: { id: "default", includeReplies },
-      update: { includeReplies },
-    });
+    await updateSettings({ includeReplies });
     await ctx.reply(`Replies ${includeReplies ? "included" : "ignored"}.`);
     return;
   }
 
   const settings = await getSettings();
-  const count = await prisma.project.count();
+  const count = await countProjects();
   await ctx.reply(
     [
       "<b>Settings</b>",

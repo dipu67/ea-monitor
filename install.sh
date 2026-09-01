@@ -156,12 +156,6 @@ ensure_node() {
   have npm || die "npm is required (comes with Node.js)"
 }
 
-ensure_build_tools() {
-  [ "$OS" = termux ] || return 0
-  info "Installing Termux build tools (better-sqlite3)"
-  pkg_install python make clang binutils pkg-config || true
-}
-
 resolve_install_dir() {
   local src="${BASH_SOURCE[0]:-}"
   if [ -n "$src" ] && [ -f "$src" ]; then
@@ -202,10 +196,6 @@ install_js() {
   cd "$INSTALL_DIR"
   info "Installing npm packages"
   npm install
-
-  info "Generating Prisma client and database"
-  npx prisma generate
-  npx prisma db push
 }
 
 install_launcher() {
@@ -257,7 +247,6 @@ main() {
   ensure_curl
   ensure_git
   ensure_node
-  ensure_build_tools
   fetch_repo
   install_js
   install_launcher
