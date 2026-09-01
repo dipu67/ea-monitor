@@ -28,6 +28,7 @@ Install location is `$HOME/ea-monitor` (override with `EA_MONITOR_HOME`).
 git clone https://github.com/dipu67/ea-monitor.git
 cd ea-monitor
 npm install
+npm run build
 npm start
 ```
 
