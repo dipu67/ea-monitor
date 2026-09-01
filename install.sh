@@ -196,6 +196,8 @@ install_js() {
   cd "$INSTALL_DIR"
   info "Installing npm packages"
   npm install
+  info "Build project"
+  npm run build
 }
 
 install_launcher() {
